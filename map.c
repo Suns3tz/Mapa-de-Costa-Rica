@@ -7,6 +7,9 @@
 #include <stdlib.h>
 #include "bresenham.h"
 #include "geo.h"
+#include "zoom.h"
+#include "pan.h"
+#include "reset.h"
 
 const char *mapa_txt = "mapa_costa_rica.txt";
 
@@ -20,10 +23,15 @@ Country *mapa_texturas = NULL;
 int mapa_actual = 1;
 
 
-const float X_MIN = -86.0f;
-const float X_MAX = -82.5f;
-const float Y_MIN = 8.0f;
-const float Y_MAX = 11.3f;
+const float X_MIN_INIT = -86.0f;
+const float X_MAX_INIT = -82.5f;
+const float Y_MIN_INIT = 8.0f;
+const float Y_MAX_INIT = 11.3f;
+
+float X_MIN = X_MIN_INIT;
+float X_MAX = X_MAX_INIT;
+float Y_MIN = Y_MIN_INIT;
+float Y_MAX = Y_MAX_INIT;
 
 int univ_to_fb_x(float x) {
 	return (int)(((x - X_MIN) / (X_MAX - X_MIN)) * WIDTH);
@@ -112,6 +120,71 @@ void display(void) {
 	glFlush();
 }
 
+void keyboard(unsigned char key, int x, int y) {
+	(void)x;
+	(void)y;
+
+	int modificadores = glutGetModifiers();
+	float zoom_speed = (modificadores & GLUT_ACTIVE_CTRL) ? ZOOM_LENTO : ZOOM_NORMAL;
+
+	switch (key) {
+		case '=':
+			zoom(&X_MIN, &X_MAX, &Y_MIN, &Y_MAX, 1.0f / zoom_speed);
+			break;
+		case '+':
+			zoom(&X_MIN, &X_MAX, &Y_MIN, &Y_MAX, 1.0f / ZOOM_RAPIDO);
+			break;
+		case '-':
+			zoom(&X_MIN, &X_MAX, &Y_MIN, &Y_MAX, zoom_speed);
+			break;
+		case '_':
+			zoom(&X_MIN, &X_MAX, &Y_MIN, &Y_MAX, ZOOM_RAPIDO);
+			break;
+		case 'r':
+		case 'R':
+			reset(&X_MIN, &X_MAX, &Y_MIN, &Y_MAX, X_MIN_INIT, X_MAX_INIT, Y_MIN_INIT, Y_MAX_INIT);
+			break;
+		default:
+			return;
+	}
+
+	glutPostRedisplay();
+}
+
+void specialKey(int key, int x, int y) {
+	(void)x;
+	(void)y;
+
+	int modificadores = glutGetModifiers();
+	float pan_speed = PAN_NORMAL;
+	if (modificadores & GLUT_ACTIVE_SHIFT) {
+		pan_speed = PAN_RAPIDO;
+	} else if (modificadores & GLUT_ACTIVE_CTRL) {
+		pan_speed = PAN_LENTO;
+	}
+	float dx = (X_MAX - X_MIN) * pan_speed;
+	float dy = (Y_MAX - Y_MIN) * pan_speed;
+
+	switch (key) {
+		case GLUT_KEY_RIGHT:
+			pan(&X_MIN, &X_MAX, &Y_MIN, &Y_MAX, dx, 0.0f);
+			break;
+		case GLUT_KEY_LEFT:
+			pan(&X_MIN, &X_MAX, &Y_MIN, &Y_MAX, -dx, 0.0f);
+			break;
+		case GLUT_KEY_UP:
+			pan(&X_MIN, &X_MAX, &Y_MIN, &Y_MAX, 0.0f, dy);
+			break;
+		case GLUT_KEY_DOWN:
+			pan(&X_MIN, &X_MAX, &Y_MIN, &Y_MAX, 0.0f, -dy);
+			break;
+		default:
+			return;
+	}
+
+	glutPostRedisplay();
+}
+
 void init() {
 	glClearColor(0.0,0.0,0.0,1.0);
 	glColor3f(1.0f,1.0f,1.0f);
@@ -137,6 +210,8 @@ int main(int argc, char **argv) {
 	init();
 	
 	glutDisplayFunc(display);
+	glutKeyboardFunc(keyboard);
+	glutSpecialFunc(specialKey);
 	glutMainLoop();
 	
 	return 0;
