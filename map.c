@@ -10,6 +10,7 @@
 #include "zoom.h"
 #include "pan.h"
 #include "reset.h"
+#include "rotate.h"
 
 const char *mapa_txt = "mapa_costa_rica.txt";
 
@@ -126,7 +127,8 @@ void keyboard(unsigned char key, int x, int y) {
 
 	int modificadores = glutGetModifiers();
 	float zoom_speed = (modificadores & GLUT_ACTIVE_CTRL) ? ZOOM_LENTO : ZOOM_NORMAL;
-
+	float rotate_speed = (modificadores & GLUT_ACTIVE_CTRL) ? ROTATE_LENTO : ROTATE_NORMAL;
+	float rotate_speed_C = (modificadores & GLUT_ACTIVE_CTRL) ? ROTATE_LENTO_C : ROTATE_NORMAL_C;
 	switch (key) {
 		case '=':
 			zoom(&X_MIN, &X_MAX, &Y_MIN, &Y_MAX, 1.0f / zoom_speed);
@@ -139,6 +141,18 @@ void keyboard(unsigned char key, int x, int y) {
 			break;
 		case '_':
 			zoom(&X_MIN, &X_MAX, &Y_MIN, &Y_MAX, ZOOM_RAPIDO);
+			break;
+		case ';':
+			rotate(mapa_lineas, rotate_speed);
+			break;
+		case ':':
+			rotate(mapa_lineas,ROTATE_RAPIDO);
+			break;
+		case '.':
+			rotate(mapa_lineas, rotate_speed_C);
+			break;
+		case '>':
+			rotate(mapa_lineas,ROTATE_RAPIDO_C);
 			break;
 		case 'r':
 		case 'R':
@@ -194,12 +208,16 @@ void init() {
 	gluOrtho2D(0,WIDTH,0,HEIGHT);
 }
 
+
 int main(int argc, char **argv) {
 	mapa_lineas = load_map();
+	
+	
 	if (!mapa_lineas) {
 		printf("No se pudo cargar el mapa");
 		return 1;
 	}
+	
 	
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);

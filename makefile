@@ -10,7 +10,7 @@ NASMFLAGS = -f elf64
 LIBS = -lGL -lGLU -lglut -lm
 
 # Objetos que componen el proyecto
-OBJS = map.o bresenham.o zoom.o pan.o reset.o
+OBJS = map.o bresenham.o zoom.o pan.o reset.o rotate.o
 
 # Regla principal
 all: $(TARGET)
