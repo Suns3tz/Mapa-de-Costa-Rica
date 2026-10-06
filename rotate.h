@@ -11,6 +11,6 @@
 
 #include "geo.h"
 
-void rotate(Country *cr, float angle);
+void rotate(Country *cr, float angle, float x_min, float x_max, float y_min, float y_max);
 
 #endif

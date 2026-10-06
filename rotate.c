@@ -6,28 +6,12 @@
 #define M_PI 3.14159265358979323846f
 #endif
 
-void rotate(Country *cr, float angle)
+void rotate(Country *cr, float angle, float x_min, float x_max, float y_min, float y_max)
 {
     if (!cr || cr->Q_prov == 0) return;
 
-    // Obtener el centro en coordenadas universales
-	double suma_x = 0.0;
-    double suma_y = 0.0;
-    long total_puntos = 0;
-    for (int p = 0; p < cr->Q_prov; p++) {
-        for (int g = 0; g < cr->prov[p].Q_poly; g++) {
-            Polygon *poly = &cr->prov[p].polygons[g];
-            for (int i = 0; i < poly->Q_point; i++) {
-                suma_x += poly->points[i].x;
-                suma_y += poly->points[i].y;
-                total_puntos++;
-                
-            }
-        }
-    }
-
-    float cx = (float)(suma_x / total_puntos);
-    float cy = (float)(suma_y / total_puntos);
+    float cx = (float)(x_min + x_max) / 2.0f;
+    float cy = (float)(y_min + y_max) / 2.0f;
 
     // Convertir grados a radianes
     float rad = angle * (M_PI / 180.0f);

@@ -143,16 +143,16 @@ void keyboard(unsigned char key, int x, int y) {
 			zoom(&X_MIN, &X_MAX, &Y_MIN, &Y_MAX, ZOOM_RAPIDO);
 			break;
 		case ';':
-			rotate(mapa_lineas, rotate_speed);
+			rotate(mapa_lineas, rotate_speed, X_MIN, X_MAX, Y_MIN, Y_MAX);
 			break;
 		case ':':
-			rotate(mapa_lineas,ROTATE_RAPIDO);
+			rotate(mapa_lineas,ROTATE_RAPIDO, X_MIN, X_MAX, Y_MIN, Y_MAX);
 			break;
 		case '.':
-			rotate(mapa_lineas, rotate_speed_C);
+			rotate(mapa_lineas, rotate_speed_C, X_MIN, X_MAX, Y_MIN, Y_MAX);
 			break;
 		case '>':
-			rotate(mapa_lineas,ROTATE_RAPIDO_C);
+			rotate(mapa_lineas,ROTATE_RAPIDO_C, X_MIN, X_MAX, Y_MIN, Y_MAX);
 			break;
 		case 'r':
 		case 'R':
