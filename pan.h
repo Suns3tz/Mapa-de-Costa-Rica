@@ -1,10 +1,10 @@
 #ifndef PAN_H
 #define PAN_H
 
-#define PAN_NORMAL 0.08f
-#define PAN_RAPIDO 0.2f
-#define PAN_LENTO  0.03f
+#define PAN_NORMAL 0.05f
+#define PAN_RAPIDO 0.1f
+#define PAN_LENTO  0.01f
 
-void pan(float *x_min, float *x_max, float *y_min, float *y_max, float dx, float dy);
+void pan(double *x_min, double *x_max, double *y_min, double *y_max, double dx, double dy);
 
 #endif

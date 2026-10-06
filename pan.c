@@ -1,6 +1,6 @@
 #include "pan.h"
 
-void pan(float *x_min, float *x_max, float *y_min, float *y_max, float dx, float dy)
+void pan(double *x_min, double *x_max, double *y_min, double *y_max, double dx, double dy)
 {
 	*x_min += dx;
 	*x_max += dx;

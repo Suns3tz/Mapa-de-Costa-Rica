@@ -6,8 +6,8 @@ void plot(int col, int row)
 {
 	glBegin(GL_LINES);
     glVertex2f(
-        (float)col + 0.5f,
-        (float)row + 0.5f
+        (double)col + 0.5f,
+        (double)row + 0.5f
     );
     glEnd();
 }

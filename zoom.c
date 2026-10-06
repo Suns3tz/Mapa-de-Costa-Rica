@@ -3,18 +3,18 @@
 #define MIN_ZOOM 0.001f
 #define MAX_ZOOM 1000.0f
 
-void zoom(float *x_min, float *x_max, float *y_min, float *y_max, float z)
+void zoom(double *x_min, double *x_max, double *y_min, double *y_max, double z)
 {
-	float xc = (*x_min + *x_max) / 2.0f;
-	float yc = (*y_min + *y_max) / 2.0f;
+	double xc = (*x_min + *x_max) / 2.0f;
+	double yc = (*y_min + *y_max) / 2.0f;
 
-	float xmin = (*x_min - xc) * z + xc;
-	float xmax = (*x_max - xc) * z + xc;
-	float ymin = (*y_min - yc) * z + yc;
-	float ymax = (*y_max - yc) * z + yc;
+	double xmin = (*x_min - xc) * z + xc;
+	double xmax = (*x_max - xc) * z + xc;
+	double ymin = (*y_min - yc) * z + yc;
+	double ymax = (*y_max - yc) * z + yc;
 
-	float width = xmax - xmin;
-	float height = ymax - ymin;
+	double width = xmax - xmin;
+	double height = ymax - ymin;
 
 	if (width < MIN_ZOOM || height < MIN_ZOOM) return;
 	if (width > MAX_ZOOM || height > MAX_ZOOM) return;

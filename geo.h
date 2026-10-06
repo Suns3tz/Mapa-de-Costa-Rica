@@ -2,9 +2,9 @@
 #define GEO_H
 
 typedef struct {
-	float x;
-	float y;
-	float w;
+	double x;
+	double y;
+	double w;
 } Point;
 
 typedef struct {

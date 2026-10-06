@@ -1,7 +1,7 @@
 #ifndef RESET_H
 #define RESET_H
 
-void reset(float *x_min, float *x_max, float *y_min, float *y_max,
-           float x_min_init, float x_max_init, float y_min_init, float y_max_init);
+void reset(double *x_min, double *x_max, double *y_min, double *y_max,
+           double x_min_init, double x_max_init, double y_min_init, double y_max_init);
 
 #endif
