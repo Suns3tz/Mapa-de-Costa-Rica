@@ -18,8 +18,8 @@
 #define CANTIDAD_TEXTURAS 7
 const char *mapa_txt = "mapa_costa_rica.txt";
 
-const int WIDTH = 800;
-const int HEIGHT = 600;
+const int WIDTH = 1200;
+const int HEIGHT = 1080;
 
 Country *mapa_lineas = NULL;
 Country *mapa_original = NULL;
