@@ -11,14 +11,18 @@
 #include "pan.h"
 #include "reset.h"
 #include "rotate.h"
+#include "clipping.h"
+#include "filling.h"
+#include "texture.h"
 #define M_PI 3.14159265358979323846f
+#define CANTIDAD_TEXTURAS 7
 const char *mapa_txt = "mapa_costa_rica.txt";
 
 const int WIDTH = 800;
 const int HEIGHT = 600;
 
 Country *mapa_lineas = NULL;
-const Country *mapa_original = NULL;
+Country *mapa_original = NULL;
 
 int mapa_actual = 1;
 
@@ -35,6 +39,18 @@ double X_MAX = X_MAX_INIT;
 double Y_MIN = Y_MIN_INIT;
 double Y_MAX = Y_MAX_INIT;
 
+static MatAVS texturas[CANTIDAD_TEXTURAS] = {0};
+
+static const char *archivos_texturas[CANTIDAD_TEXTURAS] = {
+    "texturas/provincia_0.avs",
+    "texturas/provincia_1.avs",
+    "texturas/provincia_2.avs",
+    "texturas/provincia_3.avs",
+    "texturas/provincia_4.avs",
+    "texturas/provincia_5.avs",
+    "texturas/provincia_6.avs"
+};
+
 int univ_to_fb_x(double x) {
 	return (int)(((x - X_MIN) / (X_MAX - X_MIN)) * WIDTH);
 }
@@ -42,6 +58,153 @@ int univ_to_fb_x(double x) {
 int univ_to_fb_y(double y){
 	return (int)(((y - Y_MIN) / (Y_MAX - Y_MIN)) * HEIGHT);
 }
+
+// - - - - - RELLENAR POLÍGONOS - - - - -
+// Convierte las coordenadas sin truncarlas a enteros
+static void convertir_poligono_a_fb(Polygon *poligono) {
+    for (int i = 0; i < poligono->Q_point; i++) {
+        Point *punto = &poligono->points[i];
+
+        double x = ((punto->x - X_MIN) / (X_MAX - X_MIN)) * WIDTH;
+        double y = ((punto->y - Y_MIN) / (Y_MAX - Y_MIN)) * HEIGHT;
+
+        // El poligono ya esta recortado
+        // Estos limites corrigen posibles pequeños errores de punto flotante en los bordes
+        punto->x = fmin((double)WIDTH, fmax(0.0, x));
+        punto->y = fmin((double)HEIGHT, fmax(0.0, y));
+    }
+}
+
+static void pintar_pixel_color(int columna, int fila, void *contexto) {
+    (void)contexto;
+
+    // Solo encendemos el pixel. El relleno lo calcula filling.c
+    glVertex2d((double)columna + 0.5, (double)fila + 0.5);
+}
+
+void render_country_relleno(const Country *cr) {
+    if (!cr) {
+        return;
+    }
+
+    static const float colores[7][3] = {
+        {0.90f, 0.25f, 0.25f},
+        {0.25f, 0.75f, 0.30f},
+        {0.25f, 0.45f, 0.95f},
+        {0.95f, 0.80f, 0.20f},
+        {0.75f, 0.30f, 0.85f},
+        {0.20f, 0.80f, 0.85f},
+        {0.95f, 0.55f, 0.20f}
+    };
+
+    glBegin(GL_POINTS);
+
+    for (int p = 0; p < cr->Q_prov; p++) {
+        const Province *prov = &cr->prov[p];
+
+        glColor3fv(colores[p % 7]);
+
+        for (int g = 0; g < prov->Q_poly; g++) {
+            const Polygon *original = &prov->polygons[g];
+
+            Polygon recortado = {NULL, 0};
+
+            if (!clipping_poligono(original, &recortado, X_MIN, X_MAX, Y_MIN, Y_MAX)) {
+                continue;
+            }
+
+            if (recortado.Q_point >= 3) {
+                convertir_poligono_a_fb(&recortado);
+
+                int resultado = filling_poligono(&recortado, WIDTH, HEIGHT,
+													pintar_pixel_color, NULL);
+                (void)resultado;
+            }
+
+            liberar_poligono_clipping(&recortado);
+        }
+    }
+
+    glEnd();
+}
+
+// - - - - - FIN RELLENAR POLÍGONOS - - - - -
+
+// - - - - - TEXTURAS - - - - -
+static void liberar_texturas(void) {
+    for (int i = 0; i < CANTIDAD_TEXTURAS; i++) {
+        texture_free(&texturas[i]);
+    }
+}
+
+static int cargar_texturas(void) {
+    for (int i = 0; i < CANTIDAD_TEXTURAS; i++) {
+        if (texture_load(archivos_texturas[i], &texturas[i]) != 0) {
+            fprintf(stderr, "No se pudo cargar la textura: %s\n", archivos_texturas[i]);
+
+            liberar_texturas();
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+static void pintar_pixel_textura(int columna, int fila, void *contexto) {
+    const MatAVS *textura = contexto;
+
+    Pixel pixel;
+
+    if (!texture_sample(textura, columna, fila, &pixel)) {
+        return;
+    }
+
+    // El setcolor
+    glColor3ub(pixel.r, pixel.g, pixel.b);
+
+    // El plot
+    glVertex2d((double)columna + 0.5, (double)fila + 0.5);
+}
+
+void render_country_texturas(const Country *cr) {
+    if (!cr) {
+        return;
+    }
+
+    glBegin(GL_POINTS);
+
+    for (int p = 0; p < cr->Q_prov; p++) {
+        const Province *prov = &cr->prov[p];
+
+        MatAVS *textura = &texturas[p % CANTIDAD_TEXTURAS];
+
+        for (int g = 0; g < prov->Q_poly; g++) {
+            const Polygon *original = &prov->polygons[g];
+
+            Polygon recortado = {NULL, 0};
+
+            if (!clipping_poligono(original, &recortado, X_MIN,
+                    				X_MAX, Y_MIN, Y_MAX)) {
+                continue;
+            }
+
+            if (recortado.Q_point >= 3) {
+                convertir_poligono_a_fb(&recortado);
+
+                int resultado = filling_poligono(&recortado, WIDTH, HEIGHT,
+                    								pintar_pixel_textura, textura);
+
+                (void)resultado;
+            }
+
+            liberar_poligono_clipping(&recortado);
+        }
+    }
+
+    glEnd();
+}
+
+// - - - - - FIN TEXTURAS - - - - -
 
 void render_country(const Country *cr) {
     if (!cr) return;
@@ -214,6 +377,15 @@ void keyboard(unsigned char key, int x, int y) {
 			reset(&X_MIN, &X_MAX, &Y_MIN, &Y_MAX, X_MIN_INIT, X_MAX_INIT, Y_MIN_INIT, Y_MAX_INIT);
 			rotate(mapa_original, mapa_lineas, angulo_actual, X_MIN, X_MAX, Y_MIN, Y_MAX);
 			break;
+		case '1':
+			mapa_actual = 1;
+			break;
+		case '2':
+			mapa_actual = 2;
+			break;
+		case '3':
+			mapa_actual = 3;
+			break;
 		default:
 			return;
 	}
@@ -278,7 +450,18 @@ void init() {
 
 void display() {
     glClear(GL_COLOR_BUFFER_BIT);
-    render_country(mapa_lineas);
+
+    if (mapa_actual == 1) {
+        glColor3f(1.0f, 1.0f, 1.0f);
+        render_country(mapa_lineas);
+
+    } else if (mapa_actual == 2) {
+        render_country_relleno(mapa_lineas);
+
+    } else if (mapa_actual == 3) {
+        render_country_texturas(mapa_lineas);
+    }
+
     glFlush();
 }
 
@@ -291,7 +474,22 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 	
-	
+	if (atexit(liberar_texturas) != 0) {
+		fprintf(stderr, "No se pudo registrar la limpieza de texturas\n");
+
+		free_country(mapa_original);
+		free_country(mapa_lineas);
+
+		return 1;
+	}
+
+	if (!cargar_texturas()) {
+		free_country(mapa_original);
+		free_country(mapa_lineas);
+
+		return 1;
+	}
+
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
 	glutInitWindowSize(WIDTH, HEIGHT);
@@ -310,6 +508,3 @@ int main(int argc, char **argv) {
 	mapa_lineas = NULL;
 	return 0;
 }
-
-
-
